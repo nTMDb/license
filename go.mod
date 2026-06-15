@@ -3,7 +3,6 @@ module license
 go 1.24
 
 require (
-	github.com/Lyafei/go-rsa v0.0.0-20200519074919-6694e0e47bb8
 	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/ebfe/keccak v0.0.0-20150115210727-5cc570678d1b
 	github.com/gin-gonic/gin v1.10.0
@@ -12,6 +11,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.3
+	golang.org/x/net v0.39.0
 	gorm.io/driver/mysql v1.5.6
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
@@ -51,7 +51,6 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.16.0 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
-	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect

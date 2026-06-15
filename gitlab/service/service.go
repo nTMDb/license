@@ -5,20 +5,22 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"license/config"
 	"license/crypto"
 	"license/gitlab/entity"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"sync"
 	"time"
 
-	gorsa "github.com/Lyafei/go-rsa"
 	"github.com/gin-gonic/gin"
 )
 
@@ -227,18 +229,69 @@ func Encrypt(data, key, iv []byte) ([]byte, error) {
 	return enc, err
 }
 
-// Uses RSA private key to "encrypt" data with cached keys
+// encryptWithPrivateKey uses the RSA private key to produce a PKCS#1 v1.5
+// encryption-padded ciphertext (type-2 padding), matching Ruby OpenSSL's
+// key.private_encrypt(data) with default RSA_PKCS1_PADDING. The counterpart
+// key.public_decrypt in the gitlab-license gem expects this exact padding.
 func encryptWithPrivateKey(data string) (string, error) {
-	privateKey, _, err := keyManager.getKeys()
+	privateKeyPEM, _, err := keyManager.getKeys()
 	if err != nil {
 		return "", err
 	}
-	encrypt, err := gorsa.PriKeyEncrypt(data, string(privateKey))
+
+	block, _ := pem.Decode(privateKeyPEM)
+	if block == nil {
+		return "", fmt.Errorf("failed to decode PEM private key")
+	}
+
+	priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		log.Printf("Failed to encrypt data with RSA private key: %v", err)
+		log.Printf("Failed to parse RSA private key: %v", err)
 		return "", err
 	}
-	return encrypt, nil
+
+	// PKCS#1 v1.5 encryption padding (type 2):
+	//   EM = 0x00 || 0x02 || PS || 0x00 || M
+	// where PS is at least 8 random non-zero bytes.
+	k := priv.Size() // modulus length in bytes
+	if len(data) > k-11 {
+		return "", fmt.Errorf("data too long for RSA key size")
+	}
+
+	em := make([]byte, k)
+	em[0] = 0x00
+	em[1] = 0x02
+
+	psLen := k - len(data) - 3
+	for i := 0; i < psLen; i++ {
+		for {
+			b := make([]byte, 1)
+			if _, err := rand.Read(b); err != nil {
+				return "", err
+			}
+			if b[0] != 0 {
+				em[2+i] = b[0]
+				break
+			}
+		}
+	}
+
+	em[2+psLen] = 0x00
+	copy(em[3+psLen:], data)
+
+	// Raw modular exponentiation: c = m^d mod n
+	m := new(big.Int).SetBytes(em)
+	c := new(big.Int).Exp(m, priv.D, priv.N)
+
+	// Pad result to full key size (big.Int.Bytes omits leading zeros)
+	result := c.Bytes()
+	if len(result) < k {
+		padded := make([]byte, k)
+		copy(padded[k-len(result):], result)
+		result = padded
+	}
+
+	return base64.StdEncoding.EncodeToString(result), nil
 }
 
 // encryptLicense encrypts license data using AES and RSA with pooled resources

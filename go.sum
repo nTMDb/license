@@ -1,5 +1,3 @@
-github.com/Lyafei/go-rsa v0.0.0-20200519074919-6694e0e47bb8 h1:ge3POyssAn0EFO04ye3uOGO45v283jpLPoF3KtCuDno=
-github.com/Lyafei/go-rsa v0.0.0-20200519074919-6694e0e47bb8/go.mod h1:SoS6gpNZbC7llv2Y6f8ByoDk7tY6GB9HEO3jL70CtHM=
 github.com/PuerkitoBio/goquery v1.10.3 h1:pFYcNSqHxBD06Fpj/KsbStFRsgRATgnf3LeXiUkhzPo=
 github.com/PuerkitoBio/goquery v1.10.3/go.mod h1:tMUX0zDMHXYlAQk6p35XxQMqMweEKB7iK7iLNd4RH4Y=
 github.com/andybalholm/cascadia v1.3.3 h1:AG2YHrzJIm4BZ19iwJ/DAua6Btl3IwJX+VI4kktS1LM=
